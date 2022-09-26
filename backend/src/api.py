@@ -30,15 +30,15 @@ db_drop_and_create_all()
 '''
 @app.route('/drinks')
 def get_drinks():
-    drinks = Drink.query.all()
-    drinks_short = [drink.short() for drink in drinks]
-    if len(drinks_short) == 0:
+    drinks = Drink.query.order_by(Drink.id).all()
+
+    if len(drinks) == 0:
         abort(404)
+
     return jsonify({
         'success': True,
-        'drinks': drinks_short
+        'drinks': [drink.short() for drink in drinks]
     })
-
 '''
 @TODO implement endpoint
     GET /drinks-detail
@@ -49,7 +49,7 @@ def get_drinks():
 '''
 @app.route('/drinks-detail')
 @requires_auth('get:drinks-detail')
-def get_drinks_detail(payload):
+def get_drinks_detail(f):
     drinks = Drink.query.all()
     drinks_long = [drink.long() for drink in drinks]
     return jsonify({
@@ -67,7 +67,7 @@ def get_drinks_detail(payload):
 '''
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
-def create_drink(payload):
+def create_drink(f):
     body = request.get_json()
     title = body.get('title', None)
     recipe = body.get('recipe', None)
@@ -97,22 +97,7 @@ def create_drink(payload):
 '''
 @app.route('/drinks/<int:id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
-def update_drink(payload, id: int):
-    # drink = Drink.query.filter(Drink.id == id).one_or_none()
-    # if not drink:
-    #     abort(404)
-    # body = request.get_json()
-    # title = body.get('title', None)
-    # recipe = body.get('recipe', None)
-    # if not title or not recipe:
-    #     abort(400)
-    # drink.title = title
-    # drink.recipe = json.dumps(recipe)
-    # drink.update()
-    # return jsonify({
-    #     'success': True,
-    #     'drinks': [drink.long()]
-    # })
+def update_drink(f, id: int):
     try:
         data = dict(request.form or request.json or request.data)
         drink = drink = Drink.query.filter(Drink.id == id).one_or_none()
@@ -135,7 +120,7 @@ def update_drink(payload, id: int):
         return json.dumps({
             'success': False,
             'error': "An Error Occurred"
-        }), 500
+        }),500
 
 '''
 @TODO implement endpoint
@@ -150,7 +135,7 @@ def update_drink(payload, id: int):
 
 @app.route('/drinks/<int:id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drink(payload, id: int):
+def delete_drink(f, id: int):
     drink = Drink.query.filter(Drink.id == id).one_or_none()
     if not drink:
         abort(404)
